@@ -9,6 +9,7 @@ import android.view.View;
 import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.TextView;
+import android.widget.Toast;
 import android.util.Log;
 
 import org.json.JSONException;
@@ -56,15 +57,11 @@ public class FloatingPanelService extends Service {
 
         // Inflate the layout for floating panel
         LayoutInflater inflater = LayoutInflater.from(this);
-        floatingView = inflater.inflate(R.layout.layout_floating_panel, null);
+        floatingView = inflater.inflate(R.layout.floating_layout, null);
 
         // Get UI components
         statusTextView = floatingView.findViewById(R.id.tv_status);
         versionTextView = floatingView.findViewById(R.id.tv_version);
-        Button closeButton = floatingView.findViewById(R.id.btn_close);
-
-        // Set close button listener
-        closeButton.setOnClickListener(v -> closeFloatingPanel());
 
         // Configure WindowManager.LayoutParams
         params = new WindowManager.LayoutParams();
@@ -79,12 +76,11 @@ public class FloatingPanelService extends Service {
         // Set layout flags
         params.format = android.graphics.PixelFormat.TRANSLUCENT;
         params.flags = WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE 
-            | WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE 
             | WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN;
 
-        // Set initial position and size
-        params.width = 300;
-        params.height = 200;
+        // Set initial position and size to match parent
+        params.width = WindowManager.LayoutParams.MATCH_PARENT;
+        params.height = WindowManager.LayoutParams.MATCH_PARENT;
         params.x = 0;
         params.y = 0;
 
@@ -94,6 +90,192 @@ public class FloatingPanelService extends Service {
             Log.d(TAG, "Floating view added to WindowManager");
         } catch (Exception e) {
             Log.e(TAG, "Error adding floating view: " + e.getMessage(), e);
+        }
+
+        // Bind all buttons with click listeners
+        bindAllButtons();
+    }
+
+    private void bindAllButtons() {
+        // MOVEMENT & ACTIONS BUTTONS - Row 1
+        bindButton(R.id.btn_unlimited_jump, "Unlimited Jump");
+        bindButton(R.id.btn_fly, "Fly");
+        bindButton(R.id.btn_fly_parachute, "Fly Parachute");
+        bindButton(R.id.btn_fast_jump, "Fast Jump");
+        bindButton(R.id.btn_high_jump, "High Jump");
+
+        // Row 2
+        bindButton(R.id.btn_long_jump, "Long Jump");
+        bindButton(R.id.btn_speed, "Speed");
+        bindButton(R.id.btn_blink, "Blink");
+        bindButton(R.id.btn_teleport_click, "Teleport Click");
+        bindButton(R.id.btn_teleport_killer, "Teleport Killer");
+
+        // Row 3
+        bindButton(R.id.btn_respawn_same_place, "Respawn Same Place");
+        bindButton(R.id.btn_auto_respawn, "Auto Respawn");
+        bindButton(R.id.btn_respawn, "Respawn");
+        bindButton(R.id.btn_free_camera, "Free Camera");
+        bindButton(R.id.btn_aim_bot, "Aim Bot");
+
+        // Row 4
+        bindButton(R.id.btn_aim_bow, "Aim Bow");
+        bindButton(R.id.btn_kill_aura, "Kill Aura");
+        bindButton(R.id.btn_infinity_kill_aura, "Infinity Kill Aura");
+        bindButton(R.id.btn_anti_kill_aura, "Anti Kill Aura");
+        bindButton(R.id.btn_auto_click, "Auto Click");
+
+        // Row 5
+        bindButton(R.id.btn_attack_button, "Attack Button");
+        bindButton(R.id.btn_hit_box, "Hit Box");
+        bindButton(R.id.btn_hit_box_v2, "Hit Box v2");
+        bindButton(R.id.btn_infinity_hit_box, "Infinity Hit Box");
+        bindButton(R.id.btn_reach, "Reach");
+
+        // Row 6
+        bindButton(R.id.btn_infinity_reach_players, "Infinity Reach Players");
+        bindButton(R.id.btn_auto_knock_back, "Auto Knockback");
+        bindButton(R.id.btn_raket_button, "Raket Button");
+        bindButton(R.id.btn_cannon_button, "Cannon Button");
+        bindButton(R.id.btn_break_block, "Break Block");
+
+        // Row 7
+        bindButton(R.id.btn_fast_break, "Fast Break");
+        bindButton(R.id.btn_drop_speed, "Drop Speed");
+        bindButton(R.id.btn_anti_void, "Anti Void");
+        bindButton(R.id.btn_no_fall_damage, "No Fall Damage");
+        bindButton(R.id.btn_ban_click_cd, "Ban Click CD");
+
+        // Row 8
+        bindButton(R.id.btn_no_clip, "No Clip");
+        bindButton(R.id.btn_no_fall, "No Fall");
+
+        // COSMETIC & NAME CUSTOMIZATION BUTTONS - Row 1
+        bindButton(R.id.btn_change_name, "Change Name");
+        bindButton(R.id.btn_hide_name, "Hide Name");
+
+        // Row 2
+        bindButton(R.id.btn_rainbow_name, "Rainbow Name");
+        bindButton(R.id.btn_red_name, "Red Name");
+        bindButton(R.id.btn_blue_name, "Blue Name");
+        bindButton(R.id.btn_black_name, "Black Name");
+        bindButton(R.id.btn_white_name, "White Name");
+
+        // Row 3
+        bindButton(R.id.btn_green_name, "Green Name");
+        bindButton(R.id.btn_yellow_name, "Yellow Name");
+        bindButton(R.id.btn_purple_name, "Purple Name");
+        bindButton(R.id.btn_gold_name, "Gold Name");
+        bindButton(R.id.btn_cyan_name, "Cyan Name");
+
+        // CLOSE BUTTONS
+        Button closeButton = floatingView.findViewById(R.id.btn_close_panel);
+        if (closeButton != null) {
+            closeButton.setOnClickListener(v -> closeFloatingPanel());
+        }
+
+        Button closeButtonBottom = floatingView.findViewById(R.id.btn_close_panel_bottom);
+        if (closeButtonBottom != null) {
+            closeButtonBottom.setOnClickListener(v -> closeFloatingPanel());
+        }
+
+        Log.d(TAG, "All buttons bound successfully");
+    }
+
+    private void bindButton(int buttonId, String buttonLabel) {
+        try {
+            Button button = floatingView.findViewById(buttonId);
+            if (button != null) {
+                button.setOnClickListener(v -> onButtonClicked(buttonLabel));
+            } else {
+                Log.w(TAG, "Button with ID " + buttonId + " not found in layout");
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Error binding button " + buttonLabel + ": " + e.getMessage(), e);
+        }
+    }
+
+    private void onButtonClicked(String buttonLabel) {
+        Log.d(TAG, "Button clicked: " + buttonLabel);
+        
+        // Show Toast notification
+        Toast.makeText(
+            this,
+            buttonLabel + " Toggled",
+            Toast.LENGTH_SHORT
+        ).show();
+
+        // Log the event
+        Log.i(TAG, "Event: " + buttonLabel + " action triggered by user");
+
+        // Handle button action
+        handleButtonAction(buttonLabel);
+    }
+
+    private void handleButtonAction(String buttonLabel) {
+        // This is where you would implement actual logic for each button
+        // For now, it's just logging the action
+        switch (buttonLabel) {
+            case "Unlimited Jump":
+                Log.d(TAG, "Executing: Unlimited Jump feature");
+                break;
+            case "Fly":
+                Log.d(TAG, "Executing: Fly feature");
+                break;
+            case "Fly Parachute":
+                Log.d(TAG, "Executing: Fly Parachute feature");
+                break;
+            case "Fast Jump":
+                Log.d(TAG, "Executing: Fast Jump feature");
+                break;
+            case "High Jump":
+                Log.d(TAG, "Executing: High Jump feature");
+                break;
+            case "Long Jump":
+                Log.d(TAG, "Executing: Long Jump feature");
+                break;
+            case "Speed":
+                Log.d(TAG, "Executing: Speed feature");
+                break;
+            case "Blink":
+                Log.d(TAG, "Executing: Blink feature");
+                break;
+            case "Teleport Click":
+                Log.d(TAG, "Executing: Teleport Click feature");
+                break;
+            case "Teleport Killer":
+                Log.d(TAG, "Executing: Teleport Killer feature");
+                break;
+            case "Respawn Same Place":
+                Log.d(TAG, "Executing: Respawn Same Place feature");
+                break;
+            case "Auto Respawn":
+                Log.d(TAG, "Executing: Auto Respawn feature");
+                break;
+            case "Respawn":
+                Log.d(TAG, "Executing: Respawn feature");
+                break;
+            case "Free Camera":
+                Log.d(TAG, "Executing: Free Camera feature");
+                break;
+            case "Aim Bot":
+                Log.d(TAG, "Executing: Aim Bot feature");
+                break;
+            case "Kill Aura":
+                Log.d(TAG, "Executing: Kill Aura feature");
+                break;
+            case "Auto Click":
+                Log.d(TAG, "Executing: Auto Click feature");
+                break;
+            case "Change Name":
+                Log.d(TAG, "Executing: Change Name feature");
+                break;
+            case "Rainbow Name":
+                Log.d(TAG, "Executing: Rainbow Name feature");
+                break;
+            default:
+                Log.d(TAG, "Executing: " + buttonLabel + " feature");
+                break;
         }
     }
 
@@ -214,6 +396,9 @@ public class FloatingPanelService extends Service {
         } catch (Exception e) {
             Log.e(TAG, "Error removing floating view: " + e.getMessage(), e);
         }
+
+        // Show confirmation toast
+        Toast.makeText(this, "Panel Closed", Toast.LENGTH_SHORT).show();
 
         // Stop the service
         stopSelf();
