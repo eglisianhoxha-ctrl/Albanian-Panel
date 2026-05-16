@@ -30,7 +30,9 @@ public class FloatingPanelService extends Service {
 
     private WindowManager windowManager;
     private View floatingView;
+    private View miniBoxView;
     private WindowManager.LayoutParams params;
+    private WindowManager.LayoutParams miniBoxParams;
     private TextView statusTextView;
     private TextView versionTextView;
 
@@ -397,11 +399,81 @@ public class FloatingPanelService extends Service {
             Log.e(TAG, "Error removing floating view: " + e.getMessage(), e);
         }
 
-        // Show confirmation toast
-        Toast.makeText(this, "Panel Closed", Toast.LENGTH_SHORT).show();
+        // Show mini box in middle top with black color
+        showMiniStatusBox();
 
-        // Stop the service
-        stopSelf();
+        // Stop the service after a delay to show the mini box
+        new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(
+            this::stopSelf,
+            2000 // Show mini box for 2 seconds before stopping service
+        );
+    }
+
+    private void showMiniStatusBox() {
+        try {
+            // Create a new LinearLayout for the mini box
+            android.widget.LinearLayout miniBox = new android.widget.LinearLayout(this);
+            miniBox.setLayoutParams(new android.widget.LinearLayout.LayoutParams(
+                android.widget.LinearLayout.LayoutParams.WRAP_CONTENT,
+                android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+            ));
+            miniBox.setBackgroundColor(android.graphics.Color.BLACK);
+            miniBox.setPadding(24, 16, 24, 16);
+            miniBox.setOrientation(android.widget.LinearLayout.HORIZONTAL);
+
+            // Create TextViews for the mini box
+            android.widget.TextView textView = new android.widget.TextView(this);
+            textView.setText("PANEL CLOSED");
+            textView.setTextColor(android.graphics.Color.WHITE);
+            textView.setTextSize(14);
+            textView.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);
+            miniBox.addView(textView);
+
+            // Configure mini box layout params
+            miniBoxParams = new WindowManager.LayoutParams();
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                miniBoxParams.type = WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY;
+            } else {
+                miniBoxParams.type = WindowManager.LayoutParams.TYPE_PHONE;
+            }
+
+            miniBoxParams.format = android.graphics.PixelFormat.TRANSLUCENT;
+            miniBoxParams.flags = WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
+                | WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE;
+
+            // Get screen dimensions to center horizontally and position at top
+            android.util.DisplayMetrics displayMetrics = new android.util.DisplayMetrics();
+            windowManager.getDefaultDisplay().getMetrics(displayMetrics);
+            int screenWidth = displayMetrics.widthPixels;
+
+            miniBoxParams.width = android.widget.LinearLayout.LayoutParams.WRAP_CONTENT;
+            miniBoxParams.height = android.widget.LinearLayout.LayoutParams.WRAP_CONTENT;
+            miniBoxParams.x = screenWidth / 2; // Center horizontally
+            miniBoxParams.y = 100; // Position near top
+            miniBoxParams.gravity = android.view.Gravity.CENTER_HORIZONTAL | android.view.Gravity.TOP;
+
+            // Add mini box to WindowManager
+            windowManager.addView(miniBox, miniBoxParams);
+            miniBoxView = miniBox;
+            Log.d(TAG, "Mini status box displayed");
+
+            // Auto-remove mini box after 2 seconds
+            new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
+                try {
+                    if (miniBoxView != null && windowManager != null) {
+                        windowManager.removeView(miniBoxView);
+                        miniBoxView = null;
+                        Log.d(TAG, "Mini status box removed");
+                    }
+                } catch (Exception e) {
+                    Log.e(TAG, "Error removing mini box: " + e.getMessage(), e);
+                }
+            }, 2000);
+
+        } catch (Exception e) {
+            Log.e(TAG, "Error showing mini status box: " + e.getMessage(), e);
+        }
     }
 
     @Override
@@ -412,6 +484,9 @@ public class FloatingPanelService extends Service {
         try {
             if (floatingView != null && windowManager != null) {
                 windowManager.removeView(floatingView);
+            }
+            if (miniBoxView != null && windowManager != null) {
+                windowManager.removeView(miniBoxView);
             }
         } catch (Exception e) {
             Log.e(TAG, "Error during cleanup: " + e.getMessage(), e);
